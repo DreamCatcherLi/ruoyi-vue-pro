@@ -1,160 +1,232 @@
 #!/bin/bash
-set -e
 
-DATE=$(date +%Y%m%d%H%M)
-# 基础路径
-BASE_PATH=/work/projects/yudao-server
-# 编译后 jar 的地址。部署时，Jenkins 会上传 jar 包到该目录下
-SOURCE_PATH=$BASE_PATH/build
-# 服务名称。同时约定部署服务的 jar 包名字也为它。
-SERVER_NAME=yudao-server
-# 环境
-PROFILES_ACTIVE=development
-# 健康检查 URL
-HEALTH_CHECK_URL=http://127.0.0.1:48080/actuator/health/
+# 芋道系统 Docker 部署脚本
+# 作者: DevOps Engineer
+# 日期: $(date +%Y-%m-%d)
 
-# heapError 存放路径
-HEAP_ERROR_PATH=$BASE_PATH/heapError
-# JVM 参数
-JAVA_OPS="-Xms512m -Xmx512m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$HEAP_ERROR_PATH"
+set -e  # 遇到错误立即退出
 
-# SkyWalking Agent 配置
-#export SW_AGENT_NAME=$SERVER_NAME
-#export SW_AGENT_COLLECTOR_BACKEND_SERVICES=192.168.0.84:11800
-#export SW_GRPC_LOG_SERVER_HOST=192.168.0.84
-#export SW_AGENT_TRACE_IGNORE_PATH="Redisson/PING,/actuator/**,/admin/**"
-#export JAVA_AGENT=-javaagent:/work/skywalking/apache-skywalking-apm-bin/agent/skywalking-agent.jar
+# 颜色定义
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
-# 备份
-function backup() {
-    # 如果不存在，则无需备份
-    if [ ! -f "$BASE_PATH/$SERVER_NAME.jar" ]; then
-        echo "[backup] $BASE_PATH/$SERVER_NAME.jar 不存在，跳过备份"
-    # 如果存在，则备份到 backup 目录下，使用时间作为后缀
+# 日志函数
+log_info() {
+    echo -e "${GREEN}[INFO]${NC} $1"
+}
+
+log_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# 检查必要工具
+check_prerequisites() {
+    log_info "检查必要工具..."
+
+    if ! command -v docker &> /dev/null; then
+        log_error "Docker 未安装，请先安装 Docker"
+        exit 1
+    fi
+
+    if ! command -v docker-compose &> /dev/null; then
+        log_error "Docker Compose 未安装，请先安装 Docker Compose"
+        exit 1
+    fi
+
+    log_info "所有必要工具都已安装"
+}
+
+# 编译后端项目
+build_backend() {
+    log_info "开始编译后端项目..."
+    
+    cd yudao-server
+    
+    if [ ! -f "pom.xml" ]; then
+        log_error "yudao-server 目录中未找到 pom.xml 文件"
+        exit 1
+    fi
+    
+    mvn clean package -DskipTests
+    
+    if [ $? -ne 0 ]; then
+        log_error "后端项目编译失败"
+        exit 1
+    fi
+    
+    log_info "后端项目编译完成"
+    cd ..
+}
+
+# 编译前端项目
+build_frontend() {
+    log_info "检查前端项目..."
+    
+    if [ ! -d "yudao-ui/yudao-ui-admin-vue3" ]; then
+        log_error "前端项目目录不存在"
+        exit 1
+    fi
+    
+    cd yudao-ui/yudao-ui-admin-vue3
+    
+    # 检查是否有package.json
+    if [ ! -f "package.json" ]; then
+        log_error "前端项目中未找到 package.json 文件"
+        exit 1
+    fi
+    
+    # 安装依赖（使用国内镜像）
+    npm install --registry https://registry.npmmirror.com
+    
+    if [ $? -ne 0 ]; then
+        log_error "前端项目依赖安装失败"
+        exit 1
+    fi
+    
+    log_info "前端项目依赖安装完成"
+    cd ../../..
+}
+
+# 构建并启动服务
+start_services() {
+    log_info "构建并启动所有服务..."
+    
+    # 构建并启动服务
+    docker-compose up -d --build
+    
+    if [ $? -ne 0 ]; then
+        log_error "服务启动失败"
+        exit 1
+    fi
+    
+    log_info "所有服务已启动"
+}
+
+# 检查服务状态
+check_services() {
+    log_info "检查服务状态..."
+    
+    sleep 10  # 等待服务启动
+    
+    # 检查所有容器状态
+    docker-compose ps
+    
+    # 检查关键服务是否健康
+    MYSQL_STATUS=$(docker-compose ps mysql --format json | jq -r '.State' 2>/dev/null || echo "unknown")
+    REDIS_STATUS=$(docker-compose ps redis --format json | jq -r '.State' 2>/dev/null || echo "unknown")
+    SERVER_STATUS=$(docker-compose ps server --format json | jq -r '.State' 2>/dev/null || echo "unknown")
+    FRONTEND_STATUS=$(docker-compose ps frontend --format json | jq -r '.State' 2>/dev/null || echo "unknown")
+    
+    log_info "服务状态:"
+    echo "  MySQL: $MYSQL_STATUS"
+    echo "  Redis: $REDIS_STATUS" 
+    echo "  Server: $SERVER_STATUS"
+    echo "  Frontend: $FRONTEND_STATUS"
+    
+    if [[ "$MYSQL_STATUS" == "running" ]] && [[ "$REDIS_STATUS" == "running" ]] && [[ "$SERVER_STATUS" == "running" ]]; then
+        log_info "所有关键服务都在运行中"
+        log_info "系统访问地址: http://localhost"
+        log_info "后端API地址: http://localhost:48080"
     else
-        echo "[backup] 开始备份 $SERVER_NAME ..."
-        cp $BASE_PATH/$SERVER_NAME.jar $BASE_PATH/backup/$SERVER_NAME-$DATE.jar
-        echo "[backup] 备份 $SERVER_NAME 完成"
+        log_warn "部分服务可能存在问题，请检查日志"
     fi
 }
 
-# 最新构建代码 移动到项目环境
-function transfer() {
-    echo "[transfer] 开始转移 $SERVER_NAME.jar"
-
-    # 删除原 jar 包
-    if [ ! -f "$BASE_PATH/$SERVER_NAME.jar" ]; then
-        echo "[transfer] $BASE_PATH/$SERVER_NAME.jar 不存在，跳过删除"
-    else
-        echo "[transfer] 移除 $BASE_PATH/$SERVER_NAME.jar 完成"
-        rm $BASE_PATH/$SERVER_NAME.jar
-    fi
-
-    # 复制新 jar 包
-    echo "[transfer] 从 $SOURCE_PATH 中获取 $SERVER_NAME.jar 并迁移至 $BASE_PATH ...."
-    cp $SOURCE_PATH/$SERVER_NAME.jar $BASE_PATH
-
-    echo "[transfer] 转移 $SERVER_NAME.jar 完成"
+# 显示使用说明
+show_usage() {
+    echo "使用方法: $0 [选项]"
+    echo "选项:"
+    echo "  build     - 编译项目并启动服务"
+    echo "  start     - 启动已构建的服务"
+    echo "  stop      - 停止所有服务"
+    echo "  restart   - 重启所有服务"
+    echo "  logs      - 查看服务日志"
+    echo "  status    - 查看服务状态"
+    echo "  cleanup   - 清理所有容器和数据"
+    echo "  help      - 显示此帮助信息"
 }
 
-# 停止：优雅关闭之前已经启动的服务
-function stop() {
-    echo "[stop] 开始停止 $BASE_PATH/$SERVER_NAME"
-    PID=$(ps -ef | grep $BASE_PATH/$SERVER_NAME | grep -v "grep" | awk '{print $2}')
-    # 如果 Java 服务启动中，则进行关闭
-    if [ -n "$PID" ]; then
-        # 正常关闭
-        echo "[stop] $BASE_PATH/$SERVER_NAME 运行中，开始 kill [$PID]"
-        kill -15 $PID
-        # 等待最大 120 秒，直到关闭完成。
-        for ((i = 0; i < 120; i++))
-            do
-                sleep 1
-                PID=$(ps -ef | grep $BASE_PATH/$SERVER_NAME | grep -v "grep" | awk '{print $2}')
-                if [ -n "$PID" ]; then
-                    echo -e ".\c"
-                else
-                    echo "[stop] 停止 $BASE_PATH/$SERVER_NAME 成功"
-                    break
-                fi
-		    done
-
-        # 如果正常关闭失败，那么进行强制 kill -9 进行关闭
-        if [ -n "$PID" ]; then
-            echo "[stop] $BASE_PATH/$SERVER_NAME 失败，强制 kill -9 $PID"
-            kill -9 $PID
-        fi
-    # 如果 Java 服务未启动，则无需关闭
-    else
-        echo "[stop] $BASE_PATH/$SERVER_NAME 未启动，无需停止"
-    fi
+# 停止服务
+stop_services() {
+    log_info "停止所有服务..."
+    docker-compose down
+    log_info "所有服务已停止"
 }
 
-# 启动：启动后端项目
-function start() {
-    # 开启启动前，打印启动参数
-    echo "[start] 开始启动 $BASE_PATH/$SERVER_NAME"
-    echo "[start] JAVA_OPS: $JAVA_OPS"
-    echo "[start] JAVA_AGENT: $JAVA_AGENT"
-    echo "[start] PROFILES: $PROFILES_ACTIVE"
-
-    # 开始启动
-    BUILD_ID=dontKillMe nohup java -server $JAVA_OPS $JAVA_AGENT -jar $BASE_PATH/$SERVER_NAME.jar --spring.profiles.active=$PROFILES_ACTIVE &
-    echo "[start] 启动 $BASE_PATH/$SERVER_NAME 完成"
+# 重启服务
+restart_services() {
+    log_info "重启所有服务..."
+    docker-compose restart
+    log_info "所有服务已重启"
 }
 
-# 健康检查：自动判断后端项目是否正常启动
-function healthCheck() {
-    # 如果配置健康检查，则进行健康检查
-    if [ -n "$HEALTH_CHECK_URL" ]; then
-        # 健康检查最大 120 秒，直到健康检查通过
-        echo "[healthCheck] 开始通过 $HEALTH_CHECK_URL 地址，进行健康检查";
-        for ((i = 0; i < 120; i++))
-            do
-                # 请求健康检查地址，只获取状态码。
-                result=`curl -I -m 10 -o /dev/null -s -w %{http_code} $HEALTH_CHECK_URL || echo "000"`
-                # 如果状态码为 200，则说明健康检查通过
-                if [ "$result" == "200" ]; then
-                    echo "[healthCheck] 健康检查通过";
-                    break
-                # 如果状态码非 200，则说明未通过。sleep 1 秒后，继续重试
-                else
-                    echo -e ".\c"
-                    sleep 1
-                fi
-            done
+# 查看日志
+show_logs() {
+    log_info "显示服务日志 (按 Ctrl+C 退出)..."
+    docker-compose logs -f
+}
 
-        # 健康检查未通过，则异常退出 shell 脚本，不继续部署。
-        if [ ! "$result" == "200" ]; then
-            echo "[healthCheck] 健康检查不通过，可能部署失败。查看日志，自行判断是否启动成功";
-            tail -n 10 nohup.out
-            exit 1;
-        # 健康检查通过，打印最后 10 行日志，可能部署的人想看下日志。
-        else
-            tail -n 10 nohup.out
-        fi
-    # 如果未配置健康检查，则 sleep 120 秒，人工看日志是否部署成功。
+# 查看状态
+show_status() {
+    log_info "当前服务状态:"
+    docker-compose ps
+}
+
+# 清理服务
+cleanup() {
+    log_warn "警告: 此操作将删除所有容器、网络和卷，数据将永久丢失!"
+    read -p "是否继续? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        log_info "清理所有服务和数据..."
+        docker-compose down -v --remove-orphans
+        log_info "清理完成"
     else
-        echo "[healthCheck] HEALTH_CHECK_URL 未配置，开始 sleep 120 秒";
-        sleep 120
-        echo "[healthCheck] sleep 120 秒完成，查看日志，自行判断是否启动成功";
-        tail -n 50 nohup.out
+        log_info "取消清理操作"
     fi
 }
 
-# 部署
-function deploy() {
-    cd $BASE_PATH
-    # 备份原 jar
-    backup
-    # 停止 Java 服务
-    stop
-    # 部署新 jar
-    transfer
-    # 启动 Java 服务
-    start
-    # 健康检查
-    healthCheck
+# 主函数
+main() {
+    case "${1:-help}" in
+        "build")
+            check_prerequisites
+            build_backend
+            build_frontend
+            start_services
+            check_services
+            ;;
+        "start")
+            check_prerequisites
+            start_services
+            check_services
+            ;;
+        "stop")
+            stop_services
+            ;;
+        "restart")
+            restart_services
+            ;;
+        "logs")
+            show_logs
+            ;;
+        "status")
+            show_status
+            ;;
+        "cleanup")
+            cleanup
+            ;;
+        "help"|*)
+            show_usage
+            ;;
+    esac
 }
 
-deploy
+# 执行主函数
+main "$@"
