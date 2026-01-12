@@ -164,13 +164,13 @@ check_services() {
     cd "$PROJECT_ROOT/script/docker"
     
     # 检查所有容器状态
-    docker-compose ps
+    docker compose ps
     
     # 检查关键服务是否健康
-    MYSQL_STATUS=$(docker-compose ps mysql --format json | jq -r '.State' 2>/dev/null || echo "unknown")
-    REDIS_STATUS=$(docker-compose ps redis --format json | jq -r '.State' 2>/dev/null || echo "unknown")
-    SERVER_STATUS=$(docker-compose ps server --format json | jq -r '.State' 2>/dev/null || echo "unknown")
-    FRONTEND_STATUS=$(docker-compose ps frontend --format json | jq -r '.State' 2>/dev/null || echo "unknown")
+    MYSQL_STATUS=$(docker compose ps mysql --format json | jq -r '.Status' 2>/dev/null || echo "unknown")
+    REDIS_STATUS=$(docker compose ps redis --format json | jq -r '.Status' 2>/dev/null || echo "unknown")
+    SERVER_STATUS=$(docker compose ps server --format json | jq -r '.Status' 2>/dev/null || echo "unknown")
+    FRONTEND_STATUS=$(docker compose ps frontend --format json | jq -r '.Status' 2>/dev/null || echo "unknown")
     
     log_info "服务状态:"
     echo "  MySQL: $MYSQL_STATUS"
@@ -209,7 +209,7 @@ stop_services() {
     log_info "停止所有服务..."
     
     cd "$PROJECT_ROOT/script/docker"
-    docker-compose down
+    docker compose down
     log_info "所有服务已停止"
     cd "$PROJECT_ROOT"
 }
@@ -219,7 +219,7 @@ restart_services() {
     log_info "重启所有服务..."
     
     cd "$PROJECT_ROOT/script/docker"
-    docker-compose restart
+    docker compose restart
     log_info "所有服务已重启"
     cd "$PROJECT_ROOT"
 }
@@ -251,7 +251,7 @@ cleanup() {
         log_info "清理所有服务和数据..."
         
         cd "$PROJECT_ROOT/script/docker"
-        docker-compose down -v --remove-orphans
+        docker compose down -v --remove-orphans
         log_info "清理完成"
         cd "$PROJECT_ROOT"
     else
