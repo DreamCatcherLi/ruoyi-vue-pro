@@ -124,7 +124,7 @@ build_frontend() {
     
     # 安装依赖（使用国内镜像，并增加内存限制以防止被杀掉）
     log_info "开始安装前端项目依赖，这可能需要一些时间，请耐心等待..."
-    node --max-old-space-size=4096 $(which npm) install --registry https://registry.npmmirror.com --prefer-offline --no-audit --no-fund
+    npm install --registry https://registry.npmmirror.com
     
     if [ $? -ne 0 ]; then
         log_error "前端项目依赖安装失败"
@@ -229,7 +229,7 @@ show_logs() {
     log_info "显示服务日志 (按 Ctrl+C 退出)..."
     
     cd "$PROJECT_ROOT/script/docker"
-    docker-compose logs -f
+    docker compose logs -f
     cd "$PROJECT_ROOT"
 }
 
@@ -238,7 +238,7 @@ show_status() {
     log_info "当前服务状态:"
     
     cd "$PROJECT_ROOT/script/docker"
-    docker-compose ps
+    docker compose ps
     cd "$PROJECT_ROOT"
 }
 
