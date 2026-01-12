@@ -31,9 +31,13 @@ setup_directories() {
     
     # 创建后端代码目录结构
     sudo mkdir -p /opt/yudao/ruoyi-vue-pro
+    # 复制后端代码
+    sudo cp -r /root/workspaces/yudao/Single/ruoyi-vue-pro/ruoyi-vue-pro/ /opt/yudao/
 
     # 创建前端代码目录
     sudo mkdir -p /opt/yudao/yudao-ui-admin-vue3
+    # 复制前端代码
+    sudo cp -r /root/workspaces/yudao/Single/yudao-ui-admin-vue3/yudao-ui-admin-vue3/ /opt/yudao/
     
     # 创建日志目录
     sudo mkdir -p /var/log/yudao/ruoyi-vue-pro
