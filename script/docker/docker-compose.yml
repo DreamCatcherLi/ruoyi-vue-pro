@@ -10,7 +10,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-ruoyi-vue-pro}
     ports:
-      - "3307:3306"
+      - "3307:3306"  # 修改端口映射以避免冲突
     volumes:
       - mysql_data:/var/lib/mysql
       - /opt/yudao/ruoyi-vue-pro/sql/mysql/ruoyi-vue-pro.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -22,7 +22,7 @@ services:
     container_name: yudao-redis
     restart: unless-stopped
     ports:
-      - "6380:6379"
+      - "6380:6379"  # 修改端口映射以避免冲突
     volumes:
       - redis_data:/data
     networks:
@@ -37,7 +37,7 @@ services:
     ports:
       - "48080:48080"
     environment:
-      SPRING_PROFILES_ACTIVE: prod
+      SPRING_PROFILES_ACTIVE: prod  # 激活生产环境配置
       JAVA_OPTS: ${JAVA_OPTS:-"-Xms512m -Xmx1024m"}
     depends_on:
       - mysql
