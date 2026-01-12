@@ -31,9 +31,7 @@ setup_directories() {
     
     # 创建后端代码目录结构
     sudo mkdir -p /opt/yudao/ruoyi-vue-pro
-    sudo mkdir -p /opt/yudao/ruoyi-vue-pro/yudao-server
-    sudo mkdir -p /opt/yudao/ruoyi-vue-pro/sql/mysql
-    
+
     # 创建前端代码目录
     sudo mkdir -p /opt/yudao/yudao-ui-admin-vue3
     
