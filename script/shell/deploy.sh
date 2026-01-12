@@ -37,12 +37,14 @@ setup_directories() {
     
     # 创建后端代码目录结构
     sudo mkdir -p /opt/yudao/ruoyi-vue-pro
-    # 复制后端代码
+    # 同步后端代码
+#    rm -rf /opt/yudao/ruoyi-vue-pro
 #    sudo cp -r /root/workspaces/yudao/Single/ruoyi-vue-pro/ruoyi-vue-pro/ /opt/yudao/
 
     # 创建前端代码目录
     sudo mkdir -p /opt/yudao/yudao-ui-admin-vue3
-    # 复制前端代码
+    # 同步前端代码
+#    rm -rf /opt/yudao/yudao-ui-admin-vue3
 #    sudo cp -r /root/workspaces/yudao/Single/yudao-ui-admin-vue3/yudao-ui-admin-vue3/ /opt/yudao/
 #    log_info "前后端代码复制同步完成"
     
@@ -120,8 +122,9 @@ build_frontend() {
         exit 1
     fi
     
-    # 安装依赖（使用国内镜像）
-    npm install --registry https://registry.npmmirror.com
+    # 安装依赖（使用国内镜像，并增加内存限制以防止被杀掉）
+    log_info "开始安装前端项目依赖，这可能需要一些时间，请耐心等待..."
+    node --max-old-space-size=4096 $(which npm) install --registry https://registry.npmmirror.com --prefer-offline --no-audit --no-fund
     
     if [ $? -ne 0 ]; then
         log_error "前端项目依赖安装失败"
