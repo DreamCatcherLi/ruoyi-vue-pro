@@ -25,6 +25,35 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# 创建必要的目录并设置权限
+setup_directories() {
+    log_info "设置目录结构和权限..."
+    
+    # 创建后端代码目录结构
+    sudo mkdir -p /etc/yudao/ruoyi-vue-pro
+    sudo mkdir -p /etc/yudao/ruoyi-vue-pro/yudao-server
+    sudo mkdir -p /etc/yudao/ruoyi-vue-pro/sql/mysql
+    
+    # 创建前端代码目录
+    sudo mkdir -p /etc/yudao/yudao-ui-admin-vue3
+    
+    # 创建日志目录
+    sudo mkdir -p /var/log/yudao/ruoyi-vue-pro
+    
+    # 设置目录权限，确保当前用户和Docker都能访问
+    sudo chown -R $(whoami):$(whoami) /etc/yudao/ 2>/dev/null || true
+    sudo chown -R $(whoami):$(whoami) /var/log/yudao/ 2>/dev/null || true
+    
+    # 确保目录有适当的读写权限
+    sudo chmod -R 755 /etc/yudao/ 2>/dev/null || true
+    sudo chmod -R 755 /var/log/yudao/ 2>/dev/null || true
+    
+    # 为日志目录设置更宽松的权限，让Docker容器可以写入
+    sudo chmod 777 /var/log/yudao/ruoyi-vue-pro 2>/dev/null || true
+    
+    log_info "目录结构和权限设置完成"
+}
+
 # 检查必要工具
 check_prerequisites() {
     log_info "检查必要工具..."
@@ -142,6 +171,7 @@ check_services() {
 show_usage() {
     echo "使用方法: $0 [选项]"
     echo "选项:"
+    echo "  setup     - 设置目录结构和权限"
     echo "  build     - 编译项目并启动服务"
     echo "  start     - 启动已构建的服务"
     echo "  stop      - 停止所有服务"
@@ -195,7 +225,11 @@ cleanup() {
 # 主函数
 main() {
     case "${1:-help}" in
+        "setup")
+            setup_directories
+            ;;
         "build")
+            setup_directories
             check_prerequisites
             build_backend
             build_frontend
@@ -203,6 +237,7 @@ main() {
             check_services
             ;;
         "start")
+            setup_directories
             check_prerequisites
             start_services
             check_services

@@ -13,7 +13,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./sql/mysql/ruoyi-vue-pro.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - /etc/yudao/ruoyi-vue-pro/sql/mysql/ruoyi-vue-pro.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - yudao-network
 
@@ -30,8 +30,8 @@ services:
 
   server:
     build:
-      context: ../../yudao-server
-      dockerfile: ../../yudao-server/Dockerfile
+      context: /etc/yudao/ruoyi-vue-pro/yudao-server
+      dockerfile: Dockerfile
     container_name: yudao-server
     restart: unless-stopped
     ports:
@@ -45,12 +45,12 @@ services:
     networks:
       - yudao-network
     volumes:
-      - ./logs:/app/logs
+      - /var/log/yudao/ruoyi-vue-pro:/app/logs
 
   frontend:
     build:
-      context: ../../yudao-ui/yudao-ui-admin-vue3
-      dockerfile: ../../yudao-ui/yudao-ui-admin-vue3/Dockerfile
+      context: /etc/yudao/yudao-ui-admin-vue3
+      dockerfile: Dockerfile
     container_name: yudao-frontend
     restart: unless-stopped
     ports:
