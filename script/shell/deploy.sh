@@ -12,10 +12,6 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# 获取脚本所在目录的绝对路径
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
-
 # 日志函数
 log_info() {
     echo -e "${GREEN}[INFO]${NC} $1"
@@ -28,6 +24,12 @@ log_warn() {
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
+
+# 获取脚本所在目录的绝对路径
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+log_info "SCRIPT_DIR目录: $SCRIPT_DIR"
+log_info "PROJECT_ROOT目录: $PROJECT_ROOT"
 
 # 创建必要的目录并设置权限
 setup_directories() {
@@ -138,7 +140,7 @@ start_services() {
     cd "$PROJECT_ROOT/script/docker"
     
     # 构建并启动服务
-    docker-compose up -d --build
+    docker compose up -d --build
     
     if [ $? -ne 0 ]; then
         log_error "服务启动失败"

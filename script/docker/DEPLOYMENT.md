@@ -10,6 +10,59 @@
 - 至少 4GB 内存
 - 至少 10GB 磁盘空间
 
+## 环境安装
+
+第一步：安装 Docker
+方案 A：如果你使用的是 Alibaba Cloud Linux / CentOS 7/8
+### 1. 卸载旧版本（如果有的话）
+```bash
+sudo yum remove -y docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
+```
+### 2. 安装依赖包
+sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+
+### 3. 配置阿里云的 Docker CE 仓库（国内加速，速度更快）
+sudo yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+
+### 4. 安装 Docker 引擎
+sudo yum install -y docker-ce docker-ce-cli containerd.io
+
+### 5. 启动 Docker 并设置开机自启
+sudo systemctl start docker
+sudo systemctl enable docker
+
+第二步：安装 Docker Compose
+方法 1：推荐（通常已随 Docker 一起安装）
+在较新的安装包中，Compose 插件通常已经包含在内。你可以直接测试：
+#### 注意：这里没有横杠
+docker compose version
+如果显示了版本号（如 Docker Compose version v2.20.2），就说明已经安装好了，以后使用命令时请用 docker compose（中间无横杠）。
+
+第三步：配置优化（可选但推荐）
+## 免 sudo 运行（配置用户组）
+默认情况下，运行 docker 命令需要 sudo 权限。为了方便，可以将当前用户加入 docker 组：
+### 将当前用户 ($USER) 添加到 docker 组
+sudo usermod -aG docker $USER
+
+### 退出终端重新登录，或者运行以下命令刷新组权限
+newgrp docker
+之后你就可以直接使用 docker ps 而不需要加 sudo 了。
+
+## 配置国内镜像加速器（拉取镜像更快）
+编辑配置文件：
+```bash
+sudo mkdir -p /etc/docker
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+"registry-mirrors": ["https://xxxxx.mirror.aliyuncs.com"]
+}
+EOF
+```
+注意：你需要登录阿里云容器镜像服务控制台，在“镜像工具” -> “镜像加速器”中获取你专属的 xxxxx.mirror.aliyuncs.com 地址。
+配置好后，重启 Docker 生效：
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
 ## 部署步骤
 
 ### 1. 克隆项目

@@ -10,7 +10,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-ruoyi-vue-pro}
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - /opt/yudao/ruoyi-vue-pro/sql/mysql/ruoyi-vue-pro.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -22,7 +22,7 @@ services:
     container_name: yudao-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
     networks:
