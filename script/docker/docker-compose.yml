@@ -54,7 +54,7 @@ services:
     container_name: yudao-frontend
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "81:80"
     depends_on:
       - server
     networks:
