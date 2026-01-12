@@ -38,6 +38,7 @@ setup_directories() {
     sudo mkdir -p /opt/yudao/yudao-ui-admin-vue3
     # 复制前端代码
     sudo cp -r /root/workspaces/yudao/Single/yudao-ui-admin-vue3/yudao-ui-admin-vue3/ /opt/yudao/
+    log_info "前后端代码复制同步完成"
     
     # 创建日志目录
     sudo mkdir -p /var/log/yudao/ruoyi-vue-pro
@@ -65,7 +66,7 @@ check_prerequisites() {
         exit 1
     fi
 
-    if ! command -v docker-compose &> /dev/null; then
+    if ! command -v docker compose &> /dev/null; then
         log_error "Docker Compose 未安装，请先安装 Docker Compose"
         exit 1
     fi
