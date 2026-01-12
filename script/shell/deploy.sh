@@ -12,6 +12,10 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# 获取脚本所在目录的绝对路径
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+
 # 日志函数
 log_info() {
     echo -e "${GREEN}[INFO]${NC} $1"
@@ -78,7 +82,8 @@ check_prerequisites() {
 build_backend() {
     log_info "开始编译后端项目..."
     
-    cd yudao-server
+    # 切换到项目根目录下的yudao-server目录
+    cd "$PROJECT_ROOT/yudao-server"
     
     if [ ! -f "pom.xml" ]; then
         log_error "yudao-server 目录中未找到 pom.xml 文件"
@@ -93,7 +98,7 @@ build_backend() {
     fi
     
     log_info "后端项目编译完成"
-    cd ..
+    cd "$PROJECT_ROOT"
 }
 
 # 编译前端项目
@@ -122,12 +127,15 @@ build_frontend() {
     fi
     
     log_info "前端项目依赖安装完成"
-    cd ../../..
+    cd "$PROJECT_ROOT"
 }
 
 # 构建并启动服务
 start_services() {
     log_info "构建并启动所有服务..."
+    
+    # 切换到项目根目录，确保能找到 docker-compose.yml
+    cd "$PROJECT_ROOT/script/docker"
     
     # 构建并启动服务
     docker-compose up -d --build
@@ -138,6 +146,7 @@ start_services() {
     fi
     
     log_info "所有服务已启动"
+    cd "$PROJECT_ROOT"
 }
 
 # 检查服务状态
@@ -145,6 +154,9 @@ check_services() {
     log_info "检查服务状态..."
     
     sleep 10  # 等待服务启动
+    
+    # 切换到 docker-compose.yml 所在目录
+    cd "$PROJECT_ROOT/script/docker"
     
     # 检查所有容器状态
     docker-compose ps
@@ -168,6 +180,8 @@ check_services() {
     else
         log_warn "部分服务可能存在问题，请检查日志"
     fi
+    
+    cd "$PROJECT_ROOT"
 }
 
 # 显示使用说明
@@ -188,27 +202,39 @@ show_usage() {
 # 停止服务
 stop_services() {
     log_info "停止所有服务..."
+    
+    cd "$PROJECT_ROOT/script/docker"
     docker-compose down
     log_info "所有服务已停止"
+    cd "$PROJECT_ROOT"
 }
 
 # 重启服务
 restart_services() {
     log_info "重启所有服务..."
+    
+    cd "$PROJECT_ROOT/script/docker"
     docker-compose restart
     log_info "所有服务已重启"
+    cd "$PROJECT_ROOT"
 }
 
 # 查看日志
 show_logs() {
     log_info "显示服务日志 (按 Ctrl+C 退出)..."
+    
+    cd "$PROJECT_ROOT/script/docker"
     docker-compose logs -f
+    cd "$PROJECT_ROOT"
 }
 
 # 查看状态
 show_status() {
     log_info "当前服务状态:"
+    
+    cd "$PROJECT_ROOT/script/docker"
     docker-compose ps
+    cd "$PROJECT_ROOT"
 }
 
 # 清理服务
@@ -218,8 +244,11 @@ cleanup() {
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         log_info "清理所有服务和数据..."
+        
+        cd "$PROJECT_ROOT/script/docker"
         docker-compose down -v --remove-orphans
         log_info "清理完成"
+        cd "$PROJECT_ROOT"
     else
         log_info "取消清理操作"
     fi
