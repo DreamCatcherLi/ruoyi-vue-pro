@@ -36,13 +36,13 @@ setup_directories() {
     # 创建后端代码目录结构
     sudo mkdir -p /opt/yudao/ruoyi-vue-pro
     # 复制后端代码
-    sudo cp -r /root/workspaces/yudao/Single/ruoyi-vue-pro/ruoyi-vue-pro/ /opt/yudao/
+#    sudo cp -r /root/workspaces/yudao/Single/ruoyi-vue-pro/ruoyi-vue-pro/ /opt/yudao/
 
     # 创建前端代码目录
     sudo mkdir -p /opt/yudao/yudao-ui-admin-vue3
     # 复制前端代码
-    sudo cp -r /root/workspaces/yudao/Single/yudao-ui-admin-vue3/yudao-ui-admin-vue3/ /opt/yudao/
-    log_info "前后端代码复制同步完成"
+#    sudo cp -r /root/workspaces/yudao/Single/yudao-ui-admin-vue3/yudao-ui-admin-vue3/ /opt/yudao/
+#    log_info "前后端代码复制同步完成"
     
     # 创建日志目录
     sudo mkdir -p /var/log/yudao/ruoyi-vue-pro
@@ -82,8 +82,8 @@ check_prerequisites() {
 build_backend() {
     log_info "开始编译后端项目..."
     
-    # 切换到项目根目录下的yudao-server目录
-    cd "$PROJECT_ROOT/yudao-server"
+    # 切换到服务器上的后端代码目录
+    cd /opt/yudao/ruoyi-vue-pro/yudao-server
     
     if [ ! -f "pom.xml" ]; then
         log_error "yudao-server 目录中未找到 pom.xml 文件"
