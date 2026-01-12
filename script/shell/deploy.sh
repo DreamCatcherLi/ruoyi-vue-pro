@@ -83,10 +83,10 @@ build_backend() {
     log_info "开始编译后端项目..."
     
     # 切换到服务器上的后端代码目录
-    cd /opt/yudao/ruoyi-vue-pro/yudao-server
+    cd /opt/yudao/ruoyi-vue-pro/
     
     if [ ! -f "pom.xml" ]; then
-        log_error "yudao-server 目录中未找到 pom.xml 文件"
+        log_error "/opt/yudao/ruoyi-vue-pro/ 目录中未找到 pom.xml 文件"
         exit 1
     fi
     
