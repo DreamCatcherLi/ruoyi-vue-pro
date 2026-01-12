@@ -30,22 +30,22 @@ setup_directories() {
     log_info "设置目录结构和权限..."
     
     # 创建后端代码目录结构
-    sudo mkdir -p /etc/yudao/ruoyi-vue-pro
-    sudo mkdir -p /etc/yudao/ruoyi-vue-pro/yudao-server
-    sudo mkdir -p /etc/yudao/ruoyi-vue-pro/sql/mysql
+    sudo mkdir -p /opt/yudao/ruoyi-vue-pro
+    sudo mkdir -p /opt/yudao/ruoyi-vue-pro/yudao-server
+    sudo mkdir -p /opt/yudao/ruoyi-vue-pro/sql/mysql
     
     # 创建前端代码目录
-    sudo mkdir -p /etc/yudao/yudao-ui-admin-vue3
+    sudo mkdir -p /opt/yudao/yudao-ui-admin-vue3
     
     # 创建日志目录
     sudo mkdir -p /var/log/yudao/ruoyi-vue-pro
     
     # 设置目录权限，确保当前用户和Docker都能访问
-    sudo chown -R $(whoami):$(whoami) /etc/yudao/ 2>/dev/null || true
+    sudo chown -R $(whoami):$(whoami) /opt/yudao/ 2>/dev/null || true
     sudo chown -R $(whoami):$(whoami) /var/log/yudao/ 2>/dev/null || true
     
     # 确保目录有适当的读写权限
-    sudo chmod -R 755 /etc/yudao/ 2>/dev/null || true
+    sudo chmod -R 755 /opt/yudao/ 2>/dev/null || true
     sudo chmod -R 755 /var/log/yudao/ 2>/dev/null || true
     
     # 为日志目录设置更宽松的权限，让Docker容器可以写入
@@ -97,12 +97,12 @@ build_backend() {
 build_frontend() {
     log_info "检查前端项目..."
     
-    if [ ! -d "yudao-ui/yudao-ui-admin-vue3" ]; then
+    if [ ! -d "/opt/yudao/yudao-ui-admin-vue3" ]; then
         log_error "前端项目目录不存在"
         exit 1
     fi
     
-    cd yudao-ui/yudao-ui-admin-vue3
+    cd /opt/yudao/yudao-ui-admin-vue3
     
     # 检查是否有package.json
     if [ ! -f "package.json" ]; then

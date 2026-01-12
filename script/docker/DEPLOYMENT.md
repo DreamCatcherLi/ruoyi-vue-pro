@@ -32,7 +32,7 @@ cd ..
 #### 编译前端（可选，如果已有构建好的前端文件）
 
 ```bash
-cd yudao-ui/yudao-ui-admin-vue3
+cd /opt/yudao/yudao-ui-admin-vue3
 npm install --registry https://registry.npmmirror.com
 npm run build
 cd ../../..
