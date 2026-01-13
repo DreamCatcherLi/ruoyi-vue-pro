@@ -12,40 +12,47 @@
 
 ## 环境安装
 
-第一步：安装 Docker
+### 第一步：安装 Docker
 方案 A：如果你使用的是 Alibaba Cloud Linux / CentOS 7/8
-### 1. 卸载旧版本（如果有的话）
+
 ```bash
+# 1. 卸载旧版本（如果有的话）
 sudo yum remove -y docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
-```
-### 2. 安装依赖包
+
+# 2. 安装依赖包
 sudo yum install -y yum-utils device-mapper-persistent-data lvm2
 
-### 3. 配置阿里云的 Docker CE 仓库（国内加速，速度更快）
+# 3. 配置阿里云的 Docker CE 仓库（国内加速，速度更快）
 sudo yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
 
-### 4. 安装 Docker 引擎
+# 4. 安装 Docker 引擎
 sudo yum install -y docker-ce docker-ce-cli containerd.io
 
-### 5. 启动 Docker 并设置开机自启
+# 5. 启动 Docker 并设置开机自启
 sudo systemctl start docker
 sudo systemctl enable docker
+```
 
-第二步：安装 Docker Compose
+### 第二步：安装 Docker Compose
 方法 1：推荐（通常已随 Docker 一起安装）
 在较新的安装包中，Compose 插件通常已经包含在内。你可以直接测试：
 #### 注意：这里没有横杠
+```bash
 docker compose version
+```
 如果显示了版本号（如 Docker Compose version v2.20.2），就说明已经安装好了，以后使用命令时请用 docker compose（中间无横杠）。
 
-第三步：配置优化（可选但推荐）
-## 免 sudo 运行（配置用户组）
+### 第三步：配置优化（可选但推荐）
+```bash
+# 免 sudo 运行（配置用户组）
 默认情况下，运行 docker 命令需要 sudo 权限。为了方便，可以将当前用户加入 docker 组：
-### 将当前用户 ($USER) 添加到 docker 组
+
+# 将当前用户 ($USER) 添加到 docker 组
 sudo usermod -aG docker $USER
 
-### 退出终端重新登录，或者运行以下命令刷新组权限
+# 退出终端重新登录，或者运行以下命令刷新组权限
 newgrp docker
+```
 之后你就可以直接使用 docker ps 而不需要加 sudo 了。
 
 ## 配置国内镜像加速器（拉取镜像更快）
@@ -60,8 +67,10 @@ EOF
 ```
 注意：你需要登录阿里云容器镜像服务控制台，在“镜像工具” -> “镜像加速器”中获取你专属的 xxxxx.mirror.aliyuncs.com 地址。
 配置好后，重启 Docker 生效：
+```bash
 sudo systemctl daemon-reload
 sudo systemctl restart docker
+```
 
 ## 部署步骤
 
@@ -145,10 +154,10 @@ docker-compose logs -f
 
 ### 端口映射
 
-- `80`: 前端访问端口
-- `48080`: 后端 API 端口
-- `3306`: MySQL 端口
-- `6379`: Redis 端口
+- `81`: 前端访问端口 # 修改端口映射以避免冲突
+- `48080`: 后端 API 端口 
+- `3307`: MySQL 端口 # 修改端口映射以避免冲突
+- `6380`: Redis 端口 # 修改端口映射以避免冲突
 
 ## 服务架构
 
@@ -186,19 +195,35 @@ MySQL + Redis
 2. 配置 SSL 证书以启用 HTTPS
 3. 限制防火墙访问端口
 4. 定期备份数据
+5. 修改默认端口（生产环境建议）
+```yaml
+ports:
+  - "3307:3306"  # MySQL 改用非标准端口
+  - "6380:6379"  # Redis 改用非标准端口
+```
+6.定期更新镜像
+```bash
+docker-compose pull
+docker-compose up -d
+```
+7.启用 Redis 密码认证
+```conf
+# redis.conf
+requirepass your_strong_password_here
+```
 
 ## 监控和维护
 
 ### 查看服务状态
 
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 ### 查看服务日志
 
 ```bash
-docker-compose logs -f
+docker compose logs -f
 ```
 
 ### 备份数据
