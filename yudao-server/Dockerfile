@@ -1,6 +1,6 @@
 # backend/Dockerfile
 # 第一阶段：使用Maven和JDK17构建JAR包
-FROM maven:3.8.5-openjdk-17 AS builder
+FROM registry.cn-beijing.aliyuncs.com/liam_test/maven:3.8.5-openjdk-17 AS builder
 WORKDIR /app
 # 先复制pom文件，利用Docker缓存层加速依赖下载
 COPY pom.xml .
