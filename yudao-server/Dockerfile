@@ -10,7 +10,8 @@ COPY src ./src
 RUN mvn clean package -DskipTests -Dmaven.test.skip=true
 
 # 第二阶段：创建运行时镜像
-FROM openjdk:17-jdk-slim
+#FROM openjdk:17-jdk-slim
+FROM registry.cn-hangzhou.aliyuncs.com/acs/openjdk:17-jdk-slim
 WORKDIR /app
 # 从构建阶段复制JAR包，使用通配符避免硬编码JAR名称
 COPY --from=builder /app/target/*.jar app.jar
