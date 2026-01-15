@@ -33,6 +33,11 @@ log_info "SCRIPT_DIR目录: $SCRIPT_DIR"
 log_info "PROJECT_ROOT目录: $PROJECT_ROOT"
 log_info "DEPLOY_ROOT目录: $DEPLOY_ROOT"
 
+# 加载 .env 文件
+if [ -f "$DEPLOY_ROOT/docker/.env" ]; then
+    export $(cat "$DEPLOY_ROOT/docker/.env" | grep -v '^#' | xargs)
+fi
+
 # 部署脚本文件到指定目录
 deploy_scripts() {
     log_info "部署脚本文件到 /opt/yudao/yudao-deployment 目录..."
@@ -110,8 +115,8 @@ pull_images() {
     log_info "拉取最新镜像..."
     
     # 从环境变量或默认值获取镜像名称
-    BACKEND_IMAGE=${BACKEND_IMAGE:-registry.cn-hangzhou.aliyuncs.com/liam_test/ruoyi-vue-pro:latest}
-    FRONTEND_IMAGE=${FRONTEND_IMAGE:-registry.cn-hangzhou.aliyuncs.com/liam_test/yudao-ui-admin-vue3:latest}
+    BACKEND_IMAGE=${BACKEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/ruoyi-vue-pro:latest}
+    FRONTEND_IMAGE=${FRONTEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/yudao-ui-admin-vue3:latest}
     
     log_info "拉取后端服务镜像: $BACKEND_IMAGE"
     docker pull "$BACKEND_IMAGE"
