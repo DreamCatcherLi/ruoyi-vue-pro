@@ -33,9 +33,21 @@ log_info "SCRIPT_DIR目录: $SCRIPT_DIR"
 log_info "PROJECT_ROOT目录: $PROJECT_ROOT"
 log_info "DEPLOY_ROOT目录: $DEPLOY_ROOT"
 
-# 加载 .env 文件
-if [ -f "$DEPLOY_ROOT/docker/.env" ]; then
-    export $(cat "$DEPLOY_ROOT/docker/.env" | grep -v '^#' | xargs)
+# 从 .env 文件中加载镜像配置
+ENV_FILE="$DEPLOY_ROOT/docker/.env"
+if [ -f "$ENV_FILE" ]; then
+    # 逐行读取 .env 文件并处理镜像变量
+    while IFS= read -r line; do
+        # 跳过注释行和空行
+        if [[ $line =~ ^[^#].*= ]]; then
+            # 检查是否是镜像相关变量
+            if [[ $line == *"BACKEND_IMAGE"* ]] || [[ $line == *"FRONTEND_IMAGE"* ]]; then
+                key=$(echo $line | cut -d '=' -f1)
+                value=$(echo $line | cut -d '=' -f2-)
+                export $key="$value"
+            fi
+        fi
+    done < "$ENV_FILE"
 fi
 
 # 部署脚本文件到指定目录
