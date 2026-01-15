@@ -49,6 +49,9 @@ if [ -f "$ENV_FILE" ]; then
         fi
     done < "$ENV_FILE"
 fi
+# 输出加载的镜像变量
+log_info "BACKEND_IMAGE load from .env: ${BACKEND_IMAGE}"
+log_info "FRONTEND_IMAGE load from .env: ${FRONTEND_IMAGE}"
 
 # 部署脚本文件到指定目录
 deploy_scripts() {
