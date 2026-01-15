@@ -48,14 +48,6 @@ deploy_scripts() {
         log_warn "目录不存在: $PROJECT_ROOT/script/docker"
     fi
     
-    # 复制 script/nginx 目录
-    if [ -d "$PROJECT_ROOT/script/nginx" ]; then
-        log_info "复制 script/nginx 目录到 /opt/yudao/yudao-deployment/nginx"
-        sudo cp -r "$PROJECT_ROOT/script/nginx" /opt/yudao/yudao-deployment/
-    else
-        log_warn "目录不存在: $PROJECT_ROOT/script/nginx"
-    fi
-    
     # 复制 script/shell 目录（除了当前脚本）
     if [ -d "$PROJECT_ROOT/script/shell" ]; then
         log_info "复制 script/shell 目录到 /opt/yudao/yudao-deployment/shell"
@@ -200,8 +192,7 @@ show_usage() {
     echo "  copy      - 部署脚本文件到 /opt/yudao/yudao-deployment 目录"
     echo "  setup     - 设置目录结构和权限"
     echo "  pull      - 拉取最新镜像"
-    echo "  build     - 拉取镜像并启动服务"
-    echo "  start     - 启动已部署的服务"
+    echo "  start     - 拉取镜像并启动服务"
     echo "  stop      - 停止所有服务"
     echo "  restart   - 重启所有服务"
     echo "  logs      - 查看服务日志"
@@ -277,19 +268,11 @@ main() {
         "pull")
             pull_images
             ;;
-        "build")
+        "start")
             setup_directories
             check_prerequisites
             start_services
             check_services
-            ;;
-        "start")
-            setup_directories
-            check_prerequisites
-            cd "$DEPLOY_ROOT/docker"
-            docker compose up -d
-            check_services
-            cd "$PROJECT_ROOT"
             ;;
         "stop")
             stop_services
