@@ -3,7 +3,7 @@
 FROM registry.cn-beijing.aliyuncs.com/liam_test/maven:3.8.5-openjdk-17 AS builder
 WORKDIR /app
 # 先复制pom文件，利用Docker缓存层加速依赖下载
-COPY pom.xml .
+COPY ../pom.xml .
 RUN mvn dependency:go-offline -B
 # 复制源代码并构建
 COPY src ./src
