@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 芋道系统 Docker 部署脚本
+# 芋道系统 Docker 镜像部署脚本
 # 作者: DevOps Engineer
 # 日期: $(date +%Y-%m-%d)
 
@@ -28,35 +28,66 @@ log_error() {
 # 获取脚本所在目录的绝对路径
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+DEPLOY_ROOT="/opt/yudao/yudao-deployment"
 log_info "SCRIPT_DIR目录: $SCRIPT_DIR"
 log_info "PROJECT_ROOT目录: $PROJECT_ROOT"
+log_info "DEPLOY_ROOT目录: $DEPLOY_ROOT"
+
+# 部署脚本文件到指定目录
+deploy_scripts() {
+    log_info "部署脚本文件到 /opt/yudao/yudao-deployment 目录..."
+
+    # 创建部署目录
+    sudo mkdir -p /opt/yudao/yudao-deployment
+    
+    # 复制 script/docker 目录
+    if [ -d "$PROJECT_ROOT/script/docker" ]; then
+        log_info "复制 script/docker 目录到 /opt/yudao/yudao-deployment/docker"
+        sudo cp -r "$PROJECT_ROOT/script/docker" /opt/yudao/yudao-deployment/
+    else
+        log_warn "目录不存在: $PROJECT_ROOT/script/docker"
+    fi
+    
+    # 复制 script/nginx 目录
+    if [ -d "$PROJECT_ROOT/script/nginx" ]; then
+        log_info "复制 script/nginx 目录到 /opt/yudao/yudao-deployment/nginx"
+        sudo cp -r "$PROJECT_ROOT/script/nginx" /opt/yudao/yudao-deployment/
+    else
+        log_warn "目录不存在: $PROJECT_ROOT/script/nginx"
+    fi
+    
+    # 复制 script/shell 目录（除了当前脚本）
+    if [ -d "$PROJECT_ROOT/script/shell" ]; then
+        log_info "复制 script/shell 目录到 /opt/yudao/yudao-deployment/shell"
+        # 创建临时目录用于复制，排除当前脚本
+        TEMP_SHELL_DIR=$(mktemp -d)
+        cp -r "$PROJECT_ROOT/script/shell"/* "$TEMP_SHELL_DIR/" 2>/dev/null || true
+        # 将当前脚本备份到临时目录（如果需要保留）
+        cp "$SCRIPT_DIR/deploy.sh" "$TEMP_SHELL_DIR/deploy.sh.backup" 2>/dev/null || true
+        sudo cp -r "$TEMP_SHELL_DIR"/. /opt/yudao/yudao-deployment/shell/
+        rm -rf "$TEMP_SHELL_DIR"
+    else
+        log_warn "目录不存在: $PROJECT_ROOT/script/shell"
+    fi
+    
+    # 设置部署目录权限
+    sudo chown -R $(whoami):$(whoami) /opt/yudao/yudao-deployment 2>/dev/null || true
+    sudo chmod -R 755 /opt/yudao/yudao-deployment 2>/dev/null || true
+    
+    log_info "部署脚本文件完成"
+}
 
 # 创建必要的目录并设置权限
 setup_directories() {
     log_info "设置目录结构和权限..."
-    
-    # 创建后端代码目录结构
-    sudo mkdir -p /opt/yudao/ruoyi-vue-pro
-    # 同步后端代码
-#    rm -rf /opt/yudao/ruoyi-vue-pro
-#    sudo cp -r /root/workspaces/yudao/Single/ruoyi-vue-pro/ruoyi-vue-pro/ /opt/yudao/
 
-    # 创建前端代码目录
-    sudo mkdir -p /opt/yudao/yudao-ui-admin-vue3
-    # 同步前端代码
-#    rm -rf /opt/yudao/yudao-ui-admin-vue3
-#    sudo cp -r /root/workspaces/yudao/Single/yudao-ui-admin-vue3/yudao-ui-admin-vue3/ /opt/yudao/
-#    log_info "前后端代码复制同步完成"
-    
     # 创建日志目录
     sudo mkdir -p /var/log/yudao/ruoyi-vue-pro
     
     # 设置目录权限，确保当前用户和Docker都能访问
-    sudo chown -R $(whoami):$(whoami) /opt/yudao/ 2>/dev/null || true
     sudo chown -R $(whoami):$(whoami) /var/log/yudao/ 2>/dev/null || true
     
     # 确保目录有适当的读写权限
-    sudo chmod -R 755 /opt/yudao/ 2>/dev/null || true
     sudo chmod -R 755 /var/log/yudao/ 2>/dev/null || true
     
     # 为日志目录设置更宽松的权限，让Docker容器可以写入
@@ -82,68 +113,35 @@ check_prerequisites() {
     log_info "所有必要工具都已安装"
 }
 
-# 编译后端项目
-build_backend() {
-    log_info "开始编译后端项目..."
+# 拉取最新镜像
+pull_images() {
+    log_info "拉取最新镜像..."
     
-    # 切换到服务器上的后端代码目录
-    cd /opt/yudao/ruoyi-vue-pro/
+    # 从环境变量或默认值获取镜像名称
+    BACKEND_IMAGE=${BACKEND_IMAGE:-registry.cn-hangzhou.aliyuncs.com/liam_test/ruoyi-vue-pro:latest}
+    FRONTEND_IMAGE=${FRONTEND_IMAGE:-registry.cn-hangzhou.aliyuncs.com/liam_test/yudao-ui-admin-vue3:latest}
     
-    if [ ! -f "pom.xml" ]; then
-        log_error "/opt/yudao/ruoyi-vue-pro/ 目录中未找到 pom.xml 文件"
-        exit 1
-    fi
+    log_info "拉取后端服务镜像: $BACKEND_IMAGE"
+    docker pull "$BACKEND_IMAGE"
     
-    mvn clean package -DskipTests
+    log_info "拉取前端服务镜像: $FRONTEND_IMAGE"
+    docker pull "$FRONTEND_IMAGE"
     
-    if [ $? -ne 0 ]; then
-        log_error "后端项目编译失败"
-        exit 1
-    fi
-    
-    log_info "后端项目编译完成"
-    cd "$PROJECT_ROOT"
-}
-
-# 编译前端项目
-build_frontend() {
-    log_info "检查前端项目..."
-    
-    if [ ! -d "/opt/yudao/yudao-ui-admin-vue3" ]; then
-        log_error "前端项目目录不存在"
-        exit 1
-    fi
-    
-    cd /opt/yudao/yudao-ui-admin-vue3
-    
-    # 检查是否有package.json
-    if [ ! -f "package.json" ]; then
-        log_error "前端项目中未找到 package.json 文件"
-        exit 1
-    fi
-    
-    # 安装依赖（使用国内镜像，并增加内存限制以防止被杀掉）
-    log_info "开始安装前端项目依赖，这可能需要一些时间，请耐心等待..."
-    npm install --registry https://registry.npmmirror.com
-    
-    if [ $? -ne 0 ]; then
-        log_error "前端项目依赖安装失败"
-        exit 1
-    fi
-    
-    log_info "前端项目依赖安装完成"
-    cd "$PROJECT_ROOT"
+    log_info "镜像拉取完成"
 }
 
 # 构建并启动服务
 start_services() {
-    log_info "构建并启动所有服务..."
+    log_info "拉取镜像并启动所有服务..."
     
-    # 切换到项目根目录，确保能找到 docker-compose.yml
-    cd "$PROJECT_ROOT/script/docker"
+    # 切换到部署目录，确保能找到 docker-compose.yml
+    cd "$DEPLOY_ROOT/docker"
     
-    # 构建并启动服务
-    docker compose up -d --build
+    # 拉取最新的镜像
+    pull_images
+    
+    # 启动服务
+    docker compose up -d
     
     if [ $? -ne 0 ]; then
         log_error "服务启动失败"
@@ -161,24 +159,30 @@ check_services() {
     sleep 10  # 等待服务启动
     
     # 切换到 docker-compose.yml 所在目录
-    cd "$PROJECT_ROOT/script/docker"
+    cd "$DEPLOY_ROOT/docker"
     
     # 检查所有容器状态
     docker compose ps
     
-    # 检查关键服务是否健康
-    MYSQL_STATUS=$(docker compose ps mysql --format json | jq -r '.Status' 2>/dev/null || echo "unknown")
-    REDIS_STATUS=$(docker compose ps redis --format json | jq -r '.Status' 2>/dev/null || echo "unknown")
-    SERVER_STATUS=$(docker compose ps server --format json | jq -r '.Status' 2>/dev/null || echo "unknown")
-    FRONTEND_STATUS=$(docker compose ps frontend --format json | jq -r '.Status' 2>/dev/null || echo "unknown")
+    # 检查关键服务是否健康 - 使用表格格式并解析
+    MYSQL_STATUS=$(docker compose ps mysql --format "table {{.Status}}" | tail -n +2 | xargs || echo "not running")
+    REDIS_STATUS=$(docker compose ps redis --format "table {{.Status}}" | tail -n +2 | xargs || echo "not running")
+    SERVER_STATUS=$(docker compose ps server --format "table {{.Status}}" | tail -n +2 | xargs || echo "not running")
+    FRONTEND_STATUS=$(docker compose ps frontend --format "table {{.Status}}" | tail -n +2 | xargs || echo "not running")
+    
+    # 简化状态判断，只要包含"Up"就认为是在运行
+    MYSQL_RUNNING=$(echo "$MYSQL_STATUS" | grep -q "Up" && echo "running" || echo "stopped")
+    REDIS_RUNNING=$(echo "$REDIS_STATUS" | grep -q "Up" && echo "running" || echo "stopped")
+    SERVER_RUNNING=$(echo "$SERVER_STATUS" | grep -q "Up" && echo "running" || echo "stopped")
+    FRONTEND_RUNNING=$(echo "$FRONTEND_STATUS" | grep -q "Up" && echo "running" || echo "stopped")
     
     log_info "服务状态:"
-    echo "  MySQL: $MYSQL_STATUS"
-    echo "  Redis: $REDIS_STATUS" 
-    echo "  Server: $SERVER_STATUS"
-    echo "  Frontend: $FRONTEND_STATUS"
+    echo "  MySQL: $MYSQL_STATUS ($MYSQL_RUNNING)"
+    echo "  Redis: $REDIS_STATUS ($REDIS_RUNNING)" 
+    echo "  Server: $SERVER_STATUS ($SERVER_RUNNING)"
+    echo "  Frontend: $FRONTEND_STATUS ($FRONTEND_RUNNING)"
     
-    if [[ "$MYSQL_STATUS" == "running" ]] && [[ "$REDIS_STATUS" == "running" ]] && [[ "$SERVER_STATUS" == "running" ]]; then
+    if [[ "$MYSQL_RUNNING" == "running" ]] && [[ "$REDIS_RUNNING" == "running" ]] && [[ "$SERVER_RUNNING" == "running" ]]; then
         log_info "所有关键服务都在运行中"
         log_info "系统访问地址: http://localhost"
         log_info "后端API地址: http://localhost:48080"
@@ -193,9 +197,11 @@ check_services() {
 show_usage() {
     echo "使用方法: $0 [选项]"
     echo "选项:"
+    echo "  copy      - 部署脚本文件到 /opt/yudao/yudao-deployment 目录"
     echo "  setup     - 设置目录结构和权限"
-    echo "  build     - 编译项目并启动服务"
-    echo "  start     - 启动已构建的服务"
+    echo "  pull      - 拉取最新镜像"
+    echo "  build     - 拉取镜像并启动服务"
+    echo "  start     - 启动已部署的服务"
     echo "  stop      - 停止所有服务"
     echo "  restart   - 重启所有服务"
     echo "  logs      - 查看服务日志"
@@ -208,7 +214,7 @@ show_usage() {
 stop_services() {
     log_info "停止所有服务..."
     
-    cd "$PROJECT_ROOT/script/docker"
+    cd "$DEPLOY_ROOT/docker"
     docker compose down
     log_info "所有服务已停止"
     cd "$PROJECT_ROOT"
@@ -218,7 +224,7 @@ stop_services() {
 restart_services() {
     log_info "重启所有服务..."
     
-    cd "$PROJECT_ROOT/script/docker"
+    cd "$DEPLOY_ROOT/docker"
     docker compose restart
     log_info "所有服务已重启"
     cd "$PROJECT_ROOT"
@@ -228,7 +234,7 @@ restart_services() {
 show_logs() {
     log_info "显示服务日志 (按 Ctrl+C 退出)..."
     
-    cd "$PROJECT_ROOT/script/docker"
+    cd "$DEPLOY_ROOT/docker"
     docker compose logs -f
     cd "$PROJECT_ROOT"
 }
@@ -237,7 +243,7 @@ show_logs() {
 show_status() {
     log_info "当前服务状态:"
     
-    cd "$PROJECT_ROOT/script/docker"
+    cd "$DEPLOY_ROOT/docker"
     docker compose ps
     cd "$PROJECT_ROOT"
 }
@@ -250,7 +256,7 @@ cleanup() {
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         log_info "清理所有服务和数据..."
         
-        cd "$PROJECT_ROOT/script/docker"
+        cd "$DEPLOY_ROOT/docker"
         docker compose down -v --remove-orphans
         log_info "清理完成"
         cd "$PROJECT_ROOT"
@@ -262,22 +268,28 @@ cleanup() {
 # 主函数
 main() {
     case "${1:-help}" in
+        "copy")
+            deploy_scripts
+            ;;
         "setup")
             setup_directories
+            ;;
+        "pull")
+            pull_images
             ;;
         "build")
             setup_directories
             check_prerequisites
-            build_backend
-            build_frontend
             start_services
             check_services
             ;;
         "start")
             setup_directories
             check_prerequisites
-            start_services
+            cd "$DEPLOY_ROOT/docker"
+            docker compose up -d
             check_services
+            cd "$PROJECT_ROOT"
             ;;
         "stop")
             stop_services
