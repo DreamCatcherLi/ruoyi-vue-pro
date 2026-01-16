@@ -44,10 +44,12 @@ parse_args() {
             --backend-image)
                 BACKEND_IMAGE="$2"
                 shift 2
+                log_info "BACKEND_IMAGE load from parameter: $2"
                 ;;
             --frontend-image)
                 FRONTEND_IMAGE="$2"
                 shift 2
+                log_info "FRONTEND_IMAGE load from parameter: $2"
                 ;;
             *)
                 shift
@@ -70,14 +72,17 @@ if [ -f "$ENV_FILE" ]; then
                 # 只有当变量未被命令行参数设置时，才从.env文件加载
                 if [[ -z "${!key}" ]]; then
                     export $key="$value"
+                    # 输出从文件中加载的镜像变量
+                    log_info "${key} load from .env: ${value}"
                 fi
             fi
         fi
     done < "$ENV_FILE"
 fi
-# 输出加载的镜像变量
-log_info "BACKEND_IMAGE load from .env: ${BACKEND_IMAGE}"
-log_info "FRONTEND_IMAGE load from .env: ${FRONTEND_IMAGE}"
+
+# 输出最终的镜像变量
+log_info "BACKEND_IMAGE is: ${BACKEND_IMAGE}"
+log_info "FRONTEND_IMAGE is: ${FRONTEND_IMAGE}"
 
 # 部署脚本文件到指定目录
 deploy_scripts() {
