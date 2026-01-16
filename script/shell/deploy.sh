@@ -38,25 +38,23 @@ BACKEND_IMAGE=""
 FRONTEND_IMAGE=""
 
 # 解析命令行参数
-parse_args() {
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --backend-image)
-                BACKEND_IMAGE="$2"
-                shift 2
-                log_info "BACKEND_IMAGE load from parameter: $2"
-                ;;
-            --frontend-image)
-                FRONTEND_IMAGE="$2"
-                shift 2
-                log_info "FRONTEND_IMAGE load from parameter: $2"
-                ;;
-            *)
-                shift
-                ;;
-        esac
-    done
-}
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --backend-image)
+            BACKEND_IMAGE="$2"
+            shift 2
+            log_info "BACKEND_IMAGE load from parameter: ${BACKEND_IMAGE}"
+            ;;
+        --frontend-image)
+            FRONTEND_IMAGE="$2"
+            shift 2
+            log_info "FRONTEND_IMAGE load from parameter: ${FRONTEND_IMAGE}"
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
 
 # 从 .env 文件中加载镜像配置
 ENV_FILE="$DEPLOY_ROOT/docker/.env"
@@ -454,7 +452,6 @@ cleanup() {
 
 # 主函数
 main() {
-    parse_args "$@"
     case "${1:-help}" in
         "copy")
             deploy_scripts
