@@ -37,24 +37,31 @@ log_info "DEPLOY_ROOT目录: $DEPLOY_ROOT"
 BACKEND_IMAGE=""
 FRONTEND_IMAGE=""
 
-# 解析命令行参数
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --backend-image)
-            BACKEND_IMAGE="$2"
-            shift 2
-            log_info "BACKEND_IMAGE load from parameter: ${BACKEND_IMAGE}"
-            ;;
-        --frontend-image)
-            FRONTEND_IMAGE="$2"
-            shift 2
-            log_info "FRONTEND_IMAGE load from parameter: ${FRONTEND_IMAGE}"
-            ;;
-        *)
-            shift
-            ;;
-    esac
-done
+# 解析命令行参数函数
+parse_args() {
+    local args=("$@")
+    local i=0
+    
+    while [ $i -lt ${#args[@]} ]; do
+        case "${args[$i]}" in
+            --backend-image)
+                if [ $((i + 1)) -lt ${#args[@]} ]; then
+                    i=$((i + 1))
+                    BACKEND_IMAGE="${args[$i]}"
+                    log_info "BACKEND_IMAGE set from parameter: ${BACKEND_IMAGE}"
+                fi
+                ;;
+            --frontend-image)
+                if [ $((i + 1)) -lt ${#args[@]} ]; then
+                    i=$((i + 1))
+                    FRONTEND_IMAGE="${args[$i]}"
+                    log_info "FRONTEND_IMAGE set from parameter: ${FRONTEND_IMAGE}"
+                fi
+                ;;
+        esac
+        i=$((i + 1))
+    done
+}
 
 # 从 .env 文件中加载镜像配置
 ENV_FILE="$DEPLOY_ROOT/docker/.env"
@@ -77,10 +84,6 @@ if [ -f "$ENV_FILE" ]; then
         fi
     done < "$ENV_FILE"
 fi
-
-# 输出最终的镜像变量
-log_info "BACKEND_IMAGE is: ${BACKEND_IMAGE}"
-log_info "FRONTEND_IMAGE is: ${FRONTEND_IMAGE}"
 
 # 部署脚本文件到指定目录
 deploy_scripts() {
@@ -452,6 +455,13 @@ cleanup() {
 
 # 主函数
 main() {
+    # 解析命令行参数
+    parse_args "$@"
+    
+    # 输出最终的镜像变量
+    log_info "BACKEND_IMAGE final value: ${BACKEND_IMAGE}"
+    log_info "FRONTEND_IMAGE final value: ${FRONTEND_IMAGE}"
+    
     case "${1:-help}" in
         "copy")
             deploy_scripts
