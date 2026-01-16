@@ -33,6 +33,29 @@ log_info "SCRIPT_DIR目录: $SCRIPT_DIR"
 log_info "PROJECT_ROOT目录: $PROJECT_ROOT"
 log_info "DEPLOY_ROOT目录: $DEPLOY_ROOT"
 
+# 初始化变量
+BACKEND_IMAGE=""
+FRONTEND_IMAGE=""
+
+# 解析命令行参数
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --backend-image)
+                BACKEND_IMAGE="$2"
+                shift 2
+                ;;
+            --frontend-image)
+                FRONTEND_IMAGE="$2"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+}
+
 # 从 .env 文件中加载镜像配置
 ENV_FILE="$DEPLOY_ROOT/docker/.env"
 if [ -f "$ENV_FILE" ]; then
@@ -44,7 +67,10 @@ if [ -f "$ENV_FILE" ]; then
             if [[ $line == *"BACKEND_IMAGE"* ]] || [[ $line == *"FRONTEND_IMAGE"* ]]; then
                 key=$(echo $line | cut -d '=' -f1)
                 value=$(echo $line | cut -d '=' -f2-)
-                export $key="$value"
+                # 只有当变量未被命令行参数设置时，才从.env文件加载
+                if [[ -z "${!key}" ]]; then
+                    export $key="$value"
+                fi
             fi
         fi
     done < "$ENV_FILE"
@@ -142,7 +168,73 @@ pull_images() {
     log_info "镜像拉取完成"
 }
 
-# 构建并启动服务
+# 拉取后端镜像
+pull_backend_image() {
+    log_info "拉取后端镜像..."
+    
+    BACKEND_IMAGE=${BACKEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/ruoyi-vue-pro:latest}
+    
+    log_info "拉取后端服务镜像: $BACKEND_IMAGE"
+    docker pull "$BACKEND_IMAGE"
+    
+    log_info "后端镜像拉取完成"
+}
+
+# 拉取前端镜像
+pull_frontend_image() {
+    log_info "拉取前端镜像..."
+    
+    FRONTEND_IMAGE=${FRONTEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/yudao-ui-admin-vue3:latest}
+    
+    log_info "拉取前端服务镜像: $FRONTEND_IMAGE"
+    docker pull "$FRONTEND_IMAGE"
+    
+    log_info "前端镜像拉取完成"
+}
+
+# 启动后端服务
+start_backend() {
+    log_info "启动后端服务..."
+    
+    cd "$DEPLOY_ROOT/docker"
+    
+    # 拉取后端镜像
+    pull_backend_image
+    
+    # 启动后端服务及其依赖（mysql和redis），传递环境变量
+    BACKEND_IMAGE="${BACKEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/ruoyi-vue-pro:latest}" docker compose up -d mysql redis server
+    
+    if [ $? -ne 0 ]; then
+        log_error "后端服务启动失败"
+        exit 1
+    fi
+    
+    log_info "后端服务已启动"
+    cd "$PROJECT_ROOT"
+}
+
+# 启动前端服务
+start_frontend() {
+    log_info "启动前端服务..."
+    
+    cd "$DEPLOY_ROOT/docker"
+    
+    # 拉取前端镜像
+    pull_frontend_image
+    
+    # 启动前端服务，传递环境变量
+    FRONTEND_IMAGE="${FRONTEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/yudao-ui-admin-vue3:latest}" docker compose up -d frontend
+    
+    if [ $? -ne 0 ]; then
+        log_error "前端服务启动失败"
+        exit 1
+    fi
+    
+    log_info "前端服务已启动"
+    cd "$PROJECT_ROOT"
+}
+
+# 启动服务
 start_services() {
     log_info "拉取镜像并启动所有服务..."
     
@@ -152,7 +244,9 @@ start_services() {
     # 拉取最新的镜像
     pull_images
     
-    # 启动服务
+    # 启动服务，传递环境变量
+    BACKEND_IMAGE="${BACKEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/ruoyi-vue-pro:latest}" \
+    FRONTEND_IMAGE="${FRONTEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/yudao-ui-admin-vue3:latest}" \
     docker compose up -d
     
     if [ $? -ne 0 ]; then
@@ -207,18 +301,28 @@ check_services() {
 
 # 显示使用说明
 show_usage() {
-    echo "使用方法: $0 [选项]"
+    echo "使用方法: $0 [选项] [参数]"
+    echo "参数:"
+    echo "  --backend-image <镜像名>   指定后端服务镜像版本"
+    echo "  --frontend-image <镜像名>  指定前端服务镜像版本"
+    echo ""
     echo "选项:"
-    echo "  copy      - 部署脚本文件到 /opt/yudao/yudao-deployment 目录"
-    echo "  setup     - 设置目录结构和权限"
-    echo "  pull      - 拉取最新镜像"
-    echo "  start     - 拉取镜像并启动服务"
-    echo "  stop      - 停止所有服务"
-    echo "  restart   - 重启所有服务"
-    echo "  logs      - 查看服务日志"
-    echo "  status    - 查看服务状态"
-    echo "  cleanup   - 清理所有容器和数据"
-    echo "  help      - 显示此帮助信息"
+    echo "  copy          - 部署脚本文件到 /opt/yudao/yudao-deployment 目录"
+    echo "  setup         - 设置目录结构和权限"
+    echo "  pull          - 拉取最新镜像"
+    echo "  start         - 拉取镜像并启动所有服务"
+    echo "  start-backend - 启动后端服务（包括mysql、redis和server）"
+    echo "  start-frontend - 启动前端服务"
+    echo "  stop          - 停止所有服务"
+    echo "  stop-backend  - 停止后端服务（包括mysql、redis和server）"
+    echo "  stop-frontend - 停止前端服务"
+    echo "  restart       - 重启所有服务"
+    echo "  restart-backend - 重启后端服务（包括mysql、redis和server）"
+    echo "  restart-frontend - 重启前端服务"
+    echo "  logs          - 查看服务日志"
+    echo "  status        - 查看服务状态"
+    echo "  cleanup       - 清理所有容器和数据"
+    echo "  help          - 显示此帮助信息"
 }
 
 # 停止服务
@@ -231,12 +335,79 @@ stop_services() {
     cd "$PROJECT_ROOT"
 }
 
+# 停止后端服务
+stop_backend() {
+    log_info "停止后端服务..."
+    
+    cd "$DEPLOY_ROOT/docker"
+    docker compose stop mysql redis server
+    log_info "后端服务已停止"
+    cd "$PROJECT_ROOT"
+}
+
+# 停止前端服务
+stop_frontend() {
+    log_info "停止前端服务..."
+    
+    cd "$DEPLOY_ROOT/docker"
+    docker compose stop frontend
+    log_info "前端服务已停止"
+    cd "$PROJECT_ROOT"
+}
+
+# 重启后端服务
+restart_backend() {
+    log_info "重启后端服务..."
+    
+    cd "$DEPLOY_ROOT/docker"
+    
+    # 拉取后端镜像
+    pull_backend_image
+    
+    # 重启后端服务及其依赖（mysql和redis），传递环境变量
+    BACKEND_IMAGE="${BACKEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/ruoyi-vue-pro:latest}" docker compose restart mysql redis server
+    
+    if [ $? -ne 0 ]; then
+        log_error "后端服务重启失败，尝试启动..."
+        BACKEND_IMAGE="${BACKEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/ruoyi-vue-pro:latest}" docker compose up -d mysql redis server
+    fi
+    
+    log_info "后端服务已重启"
+    cd "$PROJECT_ROOT"
+}
+
+# 重启前端服务
+restart_frontend() {
+    log_info "重启前端服务..."
+    
+    cd "$DEPLOY_ROOT/docker"
+    
+    # 拉取前端镜像
+    pull_frontend_image
+    
+    # 重启前端服务，传递环境变量
+    FRONTEND_IMAGE="${FRONTEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/yudao-ui-admin-vue3:latest}" docker compose restart frontend
+    
+    if [ $? -ne 0 ]; then
+        log_error "前端服务重启失败，尝试启动..."
+        FRONTEND_IMAGE="${FRONTEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/yudao-ui-admin-vue3:latest}" docker compose up -d frontend
+    fi
+    
+    log_info "前端服务已重启"
+    cd "$PROJECT_ROOT"
+}
+
 # 重启服务
 restart_services() {
     log_info "重启所有服务..."
     
     cd "$DEPLOY_ROOT/docker"
+    
+    # 重启服务，传递环境变量
+    BACKEND_IMAGE="${BACKEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/ruoyi-vue-pro:latest}" \
+    FRONTEND_IMAGE="${FRONTEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/yudao-ui-admin-vue3:latest}" \
     docker compose restart
+    
     log_info "所有服务已重启"
     cd "$PROJECT_ROOT"
 }
@@ -278,6 +449,7 @@ cleanup() {
 
 # 主函数
 main() {
+    parse_args "$@"
     case "${1:-help}" in
         "copy")
             deploy_scripts
@@ -294,11 +466,35 @@ main() {
             start_services
             check_services
             ;;
+        "start-backend")
+            setup_directories
+            check_prerequisites
+            start_backend
+            check_services
+            ;;
+        "start-frontend")
+            setup_directories
+            check_prerequisites
+            start_frontend
+            check_services
+            ;;
         "stop")
             stop_services
             ;;
+        "stop-backend")
+            stop_backend
+            ;;
+        "stop-frontend")
+            stop_frontend
+            ;;
         "restart")
             restart_services
+            ;;
+        "restart-backend")
+            restart_backend
+            ;;
+        "restart-frontend")
+            restart_frontend
             ;;
         "logs")
             show_logs
