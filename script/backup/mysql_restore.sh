@@ -68,14 +68,14 @@ restore_from_backup() {
     fi
     
     # 检查数据库是否存在，如果不存在则创建
-    if ! docker-compose -f "$DOCKER_COMPOSE_PATH" exec mysql mysql -u"$DB_USER" -p"$DB_PASS" -e "USE $DB_NAME;"; then
+    if ! docker compose -f "$DOCKER_COMPOSE_PATH" exec mysql mysql -u"$DB_USER" -p"$DB_PASS" -e "USE $DB_NAME;"; then
         log_message "INFO" "数据库 $DB_NAME 不存在，正在创建..."
-        docker-compose -f "$DOCKER_COMPOSE_PATH" exec mysql mysql -u"$DB_USER" -p"$DB_PASS" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+        docker compose -f "$DOCKER_COMPOSE_PATH" exec mysql mysql -u"$DB_USER" -p"$DB_PASS" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     fi
     
     # 执行恢复操作
     log_message "INFO" "开始导入数据..."
-    docker-compose -f "$DOCKER_COMPOSE_PATH" exec -T mysql mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < "$temp_file"
+    docker compose -f "$DOCKER_COMPOSE_PATH" exec -T mysql mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < "$temp_file"
     
     # 清理临时文件
     if [[ "$backup_file" == *.gz ]]; then

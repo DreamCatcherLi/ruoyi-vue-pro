@@ -31,8 +31,8 @@ validate_prerequisites() {
     fi
     
     # 检查 Docker Compose
-    if command -v docker-compose &> /dev/null; then
-        log_message "INFO" "✓ Docker Compose 已安装: $(docker-compose --version)"
+    if command -v docker compose &> /dev/null; then
+        log_message "INFO" "✓ Docker Compose 已安装: $(docker compose version)"
     else
         log_message "ERROR" "✗ Docker Compose 未安装"
         ((failures++))
@@ -149,10 +149,10 @@ validate_database_connection() {
     local db_name="${MYSQL_DATABASE:-ruoyi-vue-pro}"
     local db_pass="${MYSQL_ROOT_PASSWORD:-123456}"
     
-    if docker-compose -f "$DOCKER_COMPOSE_PATH" ps | grep -q "yudao-mysql"; then
+    if docker compose -f "$DOCKER_COMPOSE_PATH" ps | grep -q "yudao-mysql"; then
         log_message "INFO" "✓ MySQL 容器正在运行"
         
-        if docker-compose -f "$DOCKER_COMPOSE_PATH" exec mysql mysqladmin ping -h localhost -u"root" -p"$db_pass" --silent; then
+        if docker compose -f "$DOCKER_COMPOSE_PATH" exec mysql mysqladmin ping -h localhost -u"root" -p"$db_pass" --silent; then
             log_message "INFO" "✓ 可以连接到 MySQL 数据库"
         else
             log_message "ERROR" "✗ 无法连接到 MySQL 数据库"

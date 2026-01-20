@@ -28,7 +28,7 @@ check_prerequisites() {
     fi
     
     # 检查 Docker Compose 是否已安装
-    if ! command -v docker-compose &> /dev/null; then
+    if ! command -v docker compose &> /dev/null; then
         log_message "ERROR" "Docker Compose 未安装，请先安装 Docker Compose"
         exit 1
     fi
