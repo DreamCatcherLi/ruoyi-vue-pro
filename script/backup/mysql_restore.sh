@@ -34,12 +34,12 @@ log_message() {
 check_docker_compose() {
     log_message "INFO" "检查 Docker Compose 服务状态"
     
-    if ! docker-compose -f "$DOCKER_COMPOSE_PATH" ps | grep -q "yudao-mysql"; then
+    if ! docker compose -f "$DOCKER_COMPOSE_PATH" ps | grep -q "yudao-mysql"; then
         log_message "ERROR" "MySQL 容器未找到，请确保 Docker Compose 已启动"
         exit 1
     fi
     
-    if ! docker-compose -f "$DOCKER_COMPOSE_PATH" exec mysql mysqladmin ping -h localhost -u"$DB_USER" -p"$DB_PASS" --silent; then
+    if ! docker compose -f "$DOCKER_COMPOSE_PATH" exec mysql mysqladmin ping -h localhost -u"$DB_USER" -p"$DB_PASS" --silent; then
         log_message "ERROR" "无法连接到 MySQL 数据库，请检查连接信息"
         exit 1
     fi

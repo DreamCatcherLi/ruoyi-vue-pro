@@ -141,7 +141,7 @@ show_status() {
     echo "==================================="
     echo "备份系统部署完成！"
     echo "==================================="
-    echo "备份目录: /opt/backups/mysql"
+    echo "备份目录: /opt/yudao/backups/mysql"
     echo "备份脚本位置: $SCRIPT_DIR"
     echo "当前 Cron 任务:"
     crontab -l
@@ -154,8 +154,8 @@ show_status() {
     echo "- 查看帮助: $SCRIPT_DIR/mysql_backup.sh --help"
     echo ""
     echo "重要提醒："
-    echo "1. 请确保 /opt/backups/mysql 有足够的磁盘空间"
-    echo "2. 定期检查备份日志: /opt/backups/mysql/backup.log"
+    echo "1. 请确保 /opt/yudao/backups/mysql 有足够的磁盘空间"
+    echo "2. 定期检查备份日志: /opt/yudao/backups/mysql/backup.log"
     echo "3. 定期测试恢复过程以确保备份有效"
     echo "==================================="
 }
