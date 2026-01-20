@@ -38,7 +38,7 @@ OSS_ENDPOINT=${OSS_ENDPOINT:-"oss-cn-hangzhou.aliyuncs.com"}
 
 # 邮件通知配置 (可选)
 ENABLE_EMAIL=${ENABLE_EMAIL:-false}
-EMAIL_ADDRESS=${EMAIL_ADDRESS:-"admin@example.com"}
+EMAIL_ADDRESS=${EMAIL_ADDRESS:-"mail@jingli.site"}
 
 # 日志配置
 LOG_FILE="${BACKUP_DIR}/backup.log"
@@ -109,7 +109,6 @@ perform_backup() {
         --set-charset \
         --triggers \
         --disable-keys \
-        --enable-closures \
         --force \
         --host=localhost \
         --max_allowed_packet=1G \
