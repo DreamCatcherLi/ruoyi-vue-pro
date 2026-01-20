@@ -91,7 +91,6 @@ perform_backup() {
         --single-transaction \
         --routines \
         --triggers \
-        --all \
         --ignore-table=mysql.event \
         --hex-blob \
         --skip-lock-tables \
