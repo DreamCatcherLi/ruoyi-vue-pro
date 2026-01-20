@@ -207,19 +207,19 @@ if [ -z "$BACKUP_FILE" ]; then
 fi
 
 echo "停止应用服务..."
-docker-compose -f "$DOCKER_COMPOSE_PATH" down
+docker compose -f "$DOCKER_COMPOSE_PATH" down
 
 echo "执行数据库恢复..."
-gunzip -c "$BACKUP_FILE" | docker-compose -f "$DOCKER_COMPOSE_PATH" exec -T mysql mysql -uroot -p123456 ruoyi-vue-pro
+gunzip -c "$BACKUP_FILE" | docker compose -f "$DOCKER_COMPOSE_PATH" exec -T mysql mysql -uroot -p123456 ruoyi-vue-pro
 
 echo "启动应用服务..."
-docker-compose -f "$DOCKER_COMPOSE_PATH" up -d
+docker compose -f "$DOCKER_COMPOSE_PATH" up -d
 
 echo "等待服务启动完成..."
 sleep 30
 
 echo "检查服务状态..."
-docker-compose -f "$DOCKER_COMPOSE_PATH" ps
+docker compose -f "$DOCKER_COMPOSE_PATH" ps
 ```
 
 ### 2. 备份验证脚本
