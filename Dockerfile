@@ -33,4 +33,4 @@ COPY --from=builder /app/yudao-server/target/yudao-server*.jar app.jar
 # 暴露端口（与application.yml中配置一致）
 EXPOSE 48080
 # 启动应用，可通过环境变量覆盖默认配置
-ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom -Djava.awt.headless=true", "-jar", "/app/app.jar"]
