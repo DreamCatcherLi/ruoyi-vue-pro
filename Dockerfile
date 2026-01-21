@@ -8,7 +8,7 @@ WORKDIR /app
 #COPY yudao-framework/pom.xml ./yudao-framework/
 #COPY yudao-server/pom.xml ./yudao-server/
 ## ... 复制其他需要的模块
-RUN mvn dependency:go-offline -B
+#RUN mvn dependency:go-offline -B
 
 # 复制源代码并构建
 #（正常推荐两阶段 COPY， 先仅复制 pom 文件，再复制所有文件，但本项目涉及子模块中嵌套子模块的问题，要穷举的话有点麻烦）
