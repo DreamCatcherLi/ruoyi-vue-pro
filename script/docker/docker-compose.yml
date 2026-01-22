@@ -36,7 +36,7 @@ services:
       - "48080:48080"
     environment:
       SPRING_PROFILES_ACTIVE: prod  # 激活生产环境配置
-      JAVA_OPTS: ${JAVA_OPTS:-"-Xms512m -Xmx1024m -Djava.awt.headless=true"}
+      JAVA_OPTS: ${JAVA_OPTS:-"-Xms512m -Xmx1024m -Djava.awt.headless=true -Duser.timezone=GMT+8"}
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
       MYSQL_DATABASE: ${MYSQL_DATABASE:-ruoyi-vue-pro}
@@ -46,6 +46,7 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       REDIS_DATABASE: 0
+      TZ: Asia/Shanghai
     depends_on:
       - mysql
       - redis
