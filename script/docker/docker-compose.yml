@@ -21,6 +21,7 @@ services:
     image: redis:7-alpine
     container_name: yudao-redis
     restart: unless-stopped
+    command: redis-server --requirepass redisQWER0011!
     ports:
       - "6380:6379"  # 修改端口映射以避免冲突
     volumes:
@@ -44,7 +45,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-123456}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_PASSWORD: redisQWER0011!
       REDIS_DATABASE: 0
       TZ: Asia/Shanghai
     depends_on:
