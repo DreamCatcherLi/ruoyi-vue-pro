@@ -32,6 +32,8 @@ services:
   server:
     image: ${BACKEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/ruoyi-vue-pro:latest}
     container_name: yudao-server
+    labels:
+      aliyun.log.service: "yudao-server"
     restart: unless-stopped
     ports:
       - "48080:48080"
