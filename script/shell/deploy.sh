@@ -99,6 +99,14 @@ deploy_scripts() {
     else
         log_warn "目录不存在: $PROJECT_ROOT/script/docker"
     fi
+
+    # 复制 script/backup 目录
+    if [ -d "$PROJECT_ROOT/script/backup" ]; then
+        log_info "复制 script/backup 目录到 /opt/yudao/yudao-deployment/backup"
+        sudo cp -r "$PROJECT_ROOT/script/backup" /opt/yudao/yudao-deployment/
+    else
+        log_warn "目录不存在: $PROJECT_ROOT/script/backup"
+    fi
     
     # 复制 script/shell 目录（除了当前脚本）
     if [ -d "$PROJECT_ROOT/script/shell" ]; then
