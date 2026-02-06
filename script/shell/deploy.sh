@@ -206,6 +206,13 @@ pull_frontend_image() {
     log_info "前端镜像拉取完成"
 }
 
+# 清理冗余镜像
+prune_images() {
+    log_info "清理冗余镜像..."
+    docker image prune -f
+    log_info "镜像清理完成"
+}
+
 # 启动后端服务
 start_backend() {
     log_info "启动后端服务..."
@@ -224,6 +231,7 @@ start_backend() {
     fi
     
     log_info "后端服务已启动"
+    prune_images
     cd "$PROJECT_ROOT"
 }
 
@@ -245,6 +253,7 @@ start_frontend() {
     fi
     
     log_info "前端服务已启动"
+    prune_images
     cd "$PROJECT_ROOT"
 }
 
@@ -269,6 +278,7 @@ start_services() {
     fi
     
     log_info "所有服务已启动"
+    prune_images
     cd "$PROJECT_ROOT"
 }
 
@@ -335,6 +345,7 @@ show_usage() {
     echo "  restart-frontend - 重启前端服务"
     echo "  logs          - 查看服务日志"
     echo "  status        - 查看服务状态"
+    echo "  prune-images  - 清理冗余镜像 (删除未被容器使用的悬空镜像)"
     echo "  cleanup       - 清理所有容器和数据"
     echo "  help          - 显示此帮助信息"
 }
@@ -387,6 +398,7 @@ restart_backend() {
     fi
     
     log_info "后端服务已重启"
+    prune_images
     cd "$PROJECT_ROOT"
 }
 
@@ -408,6 +420,7 @@ restart_frontend() {
     fi
     
     log_info "前端服务已重启"
+    prune_images
     cd "$PROJECT_ROOT"
 }
 
@@ -521,6 +534,9 @@ main() {
             ;;
         "status")
             show_status
+            ;;
+        "prune-images")
+            prune_images
             ;;
         "cleanup")
             cleanup
