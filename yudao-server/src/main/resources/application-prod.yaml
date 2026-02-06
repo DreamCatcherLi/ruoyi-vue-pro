@@ -49,12 +49,12 @@ spring:
         master:
           url: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:ruoyi-vue-pro}?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true # MySQL Connector/J 8.X 连接的示例
           username: ${MYSQL_USER:root}
-          password: ${MYSQL_PASSWORD:mysqlQWER0011!}
+          password: ${MYSQL_PASSWORD:123456}
         slave: # 模拟从库，可根据自己需要修改
           lazy: true # 开启懒加载，保证启动速度
           url: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:ruoyi-vue-pro}?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true&nullCatalogMeansCurrent=true
           username: ${MYSQL_USER:root}
-          password: ${MYSQL_PASSWORD:mysqlQWER0011!}
+          password: ${MYSQL_PASSWORD:123456}
 
   # Redis 配置。Redisson 默认的配置足够使用，一般不需要进行调优
   data:
@@ -62,7 +62,7 @@ spring:
       host: redis # 在Docker网络中使用服务名称
       port: 6379 # 端口
       database: 0 # 数据库索引
-      password: redisQWER0011! # Redis密码
+      password: ${REDIS_PASSWORD:123456} # Redis密码
 
 --- #################### 定时任务相关配置 ####################
 
