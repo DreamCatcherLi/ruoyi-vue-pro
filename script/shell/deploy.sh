@@ -206,10 +206,55 @@ pull_frontend_image() {
     log_info "前端镜像拉取完成"
 }
 
+# 清理指定仓库的旧版本镜像
+cleanup_repo_images() {
+    local repo_name=$1
+    local keep_count=$2
+    
+    if [ -z "$repo_name" ]; then return; fi
+    
+    log_info "正在清理 $repo_name 的旧版本，保留最近 $keep_count 个..."
+    
+    # 获取该仓库的所有镜像ID，按创建时间倒序排列
+    # 排除 <none> 标签的镜像（这些由 prune 处理）
+    # 获取要删除的镜像列表
+    local images_to_remove=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^${repo_name}:" | grep -v "<none>" | tail -n +$((keep_count + 1)))
+    
+    if [ -n "$images_to_remove" ]; then
+        echo "$images_to_remove" | while read -r image; do
+            if [ -n "$image" ]; then
+                log_info "删除旧镜像: $image"
+                docker rmi "$image" || log_warn "删除失败: $image (可能正在被使用)"
+            fi
+        done
+    else
+        log_info "没有需要清理的旧镜像"
+    fi
+}
+
 # 清理冗余镜像
 prune_images() {
-    log_info "清理冗余镜像..."
+    log_info "开始清理镜像..."
+    
+    # 1. 清理悬空镜像 (dangling images)
+    log_info "清理悬空镜像..."
     docker image prune -f
+    
+    # 2. 清理应用的历史版本镜像
+    # 提取镜像仓库名（去掉tag）
+    local backend_full=${BACKEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/ruoyi-vue-pro:latest}
+    local frontend_full=${FRONTEND_IMAGE:-registry.cn-beijing.aliyuncs.com/liam_test/yudao-ui-admin-vue3:latest}
+    
+    # 获取 repo 名称 (例如 registry.../ruoyi-vue-pro)
+    local backend_repo=${backend_full%:*}
+    local frontend_repo=${frontend_full%:*}
+    
+    # 定义保留数量
+    local keep_count=3
+    
+    cleanup_repo_images "$backend_repo" "$keep_count"
+    cleanup_repo_images "$frontend_repo" "$keep_count"
+    
     log_info "镜像清理完成"
 }
 
