@@ -6,8 +6,17 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$(dirname "${SCRIPT_DIR}")")"
-DOCKER_COMPOSE_PATH="${PROJECT_ROOT}/script/docker/docker-compose.yml"
+
+# 自动检测 docker 目录位置 (兼容本地开发环境和服务器部署环境)
+if [ -d "${SCRIPT_DIR}/../docker" ]; then
+    DOCKER_DIR="$(cd "${SCRIPT_DIR}/../docker" && pwd)"
+else
+    PROJECT_ROOT="$(dirname "$(dirname "${SCRIPT_DIR}")")"
+    DOCKER_DIR="${PROJECT_ROOT}/script/docker"
+fi
+
+DOCKER_COMPOSE_PATH="${DOCKER_DIR}/docker-compose.yml"
+ENV_FILE_PATH="${DOCKER_DIR}/.env"
 BACKUP_DIR="/opt/yudao/backups/mysql"
 LOG_FILE="${BACKUP_DIR}/validation.log"
 
@@ -63,10 +72,10 @@ validate_project_structure() {
         ((failures++))
     fi
     
-    if [ -f "$PROJECT_ROOT/script/docker/.env" ]; then
-        log_message "INFO" "✓ 环境配置文件存在: $PROJECT_ROOT/script/docker/.env"
+    if [ -f "$ENV_FILE_PATH" ]; then
+        log_message "INFO" "✓ 环境配置文件存在: $ENV_FILE_PATH"
     else
-        log_message "WARNING" "⚠ 环境配置文件不存在: $PROJECT_ROOT/script/docker/.env"
+        log_message "WARNING" "⚠ 环境配置文件不存在: $ENV_FILE_PATH"
     fi
     
     return $failures
@@ -141,7 +150,7 @@ validate_database_connection() {
     log_message "INFO" "验证数据库连接"
     
     # 加载环境变量
-    ENV_FILE_PATH="$PROJECT_ROOT/script/docker/.env"
+    # ENV_FILE_PATH 已在全局定义
     if [ -f "$ENV_FILE_PATH" ]; then
         export $(cat "$ENV_FILE_PATH" | grep -v '^#' | xargs)
     fi

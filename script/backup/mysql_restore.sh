@@ -6,15 +6,28 @@
 set -e
 
 # ==================== 配置区域 ====================
+
+# 基础路径配置
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# 自动检测 docker 目录位置 (兼容本地开发环境和服务器部署环境)
+if [ -d "${SCRIPT_DIR}/../docker" ]; then
+    # 部署环境: backup 和 docker 是兄弟目录
+    # 本地环境: script/backup 和 script/docker 也是兄弟目录
+    DOCKER_DIR="$(cd "${SCRIPT_DIR}/../docker" && pwd)"
+else
+    # 兼容旧路径逻辑
+    PROJECT_ROOT="$(dirname "$(dirname "${SCRIPT_DIR}")")"
+    DOCKER_DIR="${PROJECT_ROOT}/script/docker"
+fi
+
+DOCKER_COMPOSE_PATH="${DOCKER_DIR}/docker-compose.yml"
+ENV_FILE_PATH="${DOCKER_DIR}/.env"
+
 # 加载环境变量
-ENV_FILE_PATH="${PROJECT_ROOT}/script/docker/.env"
 if [ -f "$ENV_FILE_PATH" ]; then
     export $(cat "$ENV_FILE_PATH" | grep -v '^#' | xargs)
 fi
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$(dirname "${SCRIPT_DIR}")")"
-DOCKER_COMPOSE_PATH="${PROJECT_ROOT}/script/docker/docker-compose.yml"
 
 # 数据库配置 (从 .env 文件读取默认值)
 DB_NAME="${MYSQL_DATABASE:-ruoyi-vue-pro}"
