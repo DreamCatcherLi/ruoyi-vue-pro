@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     command: --default-authentication-plugin=mysql_native_password
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-mysqlQWER0011!}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-ruoyi-vue-pro}
     ports:
       - "3307:3306"  # 修改端口映射以避免冲突
@@ -44,7 +44,7 @@ services:
       MYSQL_PORT: 3306
       MYSQL_DATABASE: ${MYSQL_DATABASE:-ruoyi-vue-pro}
       MYSQL_USER: ${MYSQL_USER:-root}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-123456}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-mysqlQWER0011!}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: redisQWER0011!

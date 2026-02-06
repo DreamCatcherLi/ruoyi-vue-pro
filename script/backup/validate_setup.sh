@@ -147,7 +147,7 @@ validate_database_connection() {
     fi
     
     local db_name="${MYSQL_DATABASE:-ruoyi-vue-pro}"
-    local db_pass="${MYSQL_ROOT_PASSWORD:-123456}"
+    local db_pass="${MYSQL_ROOT_PASSWORD:-mysqlQWER0011!}"
     
     if docker compose -f "$DOCKER_COMPOSE_PATH" ps | grep -q "yudao-mysql"; then
         log_message "INFO" "✓ MySQL 容器正在运行"

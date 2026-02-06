@@ -19,7 +19,7 @@ DOCKER_COMPOSE_PATH="${PROJECT_ROOT}/script/docker/docker-compose.yml"
 # 数据库配置 (从 .env 文件读取默认值)
 DB_NAME="${MYSQL_DATABASE:-ruoyi-vue-pro}"
 DB_USER="root"
-DB_PASS="${MYSQL_ROOT_PASSWORD:-123456}"
+DB_PASS="${MYSQL_ROOT_PASSWORD:-mysqlQWER0011!}"
 DB_HOST="localhost"
 DB_PORT="3307"
 
