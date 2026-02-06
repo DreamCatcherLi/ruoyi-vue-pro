@@ -152,7 +152,14 @@ validate_database_connection() {
     # 加载环境变量
     # ENV_FILE_PATH 已在全局定义
     if [ -f "$ENV_FILE_PATH" ]; then
-        export $(cat "$ENV_FILE_PATH" | grep -v '^#' | xargs)
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            # 去除行首空白
+            line="${line#"${line%%[![:space:]]*}"}"
+            # 忽略注释和空行
+            if [[ ! "$line" =~ ^# ]] && [[ -n "$line" ]]; then
+                export "$line"
+            fi
+        done < "$ENV_FILE_PATH"
     fi
     
     local db_name="${MYSQL_DATABASE:-ruoyi-vue-pro}"
