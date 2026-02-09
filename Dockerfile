@@ -34,10 +34,10 @@ COPY yudao-server/pom.xml ./yudao-server/
 # 我们使用 dependency:resolve 代替 go-offline 来下载插件和依赖，并尝试忽略错误，或者仅下载第三方依赖
 # 更好的做法是：先安装父工程和通用模块到本地仓库（但此时没有源码），所以这里我们采用妥协方案：
 # 1. 仅下载插件（通常比较慢且通用）
-# RUN mvn dependency:resolve-plugins -B
+RUN mvn dependency:resolve-plugins -B
 # 2. 尝试解析依赖，允许失败（因为内部 SNAPSHOT 肯定找不到），但这样能把大部分第三方 jar 下下来
-# RUN mvn dependency:resolve -B -DexcludeGroupIds=cn.iocoder.boot || true
-RUN mvn dependency:go-offline -B -DskipTests
+RUN mvn dependency:resolve -B -DexcludeGroupIds=cn.iocoder.boot || true
+# RUN mvn dependency:go-offline -B -DskipTests
 
 # 复制源代码并构建
 #（正常推荐两阶段 COPY， 先仅复制 pom 文件，再复制所有文件，但本项目涉及子模块中嵌套子模块的问题，要穷举的话有点麻烦）
